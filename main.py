@@ -13,7 +13,7 @@ from services.strapi_api_client import StrapiApiClient
 
 def main():
     # Connect to MongoDB database
-    mongodb_service = MongoDbService.create_from_connection(connection=settings.MONGODB_CONNECTION_STRING)
+    mongodb_service = MongoDbService.create_from_connection(connection=settings.MONGODB_CONNECTION)
 
     # Get needed databases
     campaign_data_db = mongodb_service.get_database(name='campaign_data')

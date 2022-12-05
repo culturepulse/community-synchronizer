@@ -28,5 +28,4 @@ venv/
 ENV/
 /requirements.txt
 /credentials.json
-/template.yaml
 /output.txt

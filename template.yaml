@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Serverless Specification template.
+Resources:
+  StrapiSynchronizer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: strapi_synchronizer
+      Handler: main.lambda_handler
+      Runtime: python3.9
+      Timeout: 60
+      Events:
+        ScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 * * * ? *)
+            Enabled: True
+      Layers:
+        - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pandas:9
+        - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pygsheets:9
+        - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pymongo:5
+        - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pydantic:1
