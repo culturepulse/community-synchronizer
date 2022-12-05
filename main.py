@@ -30,6 +30,8 @@ def main():
     strapi_api_client = StrapiApiClient()
 
     # Scrape data to "data" variable
+    print("Strapi synchronizer v1.0")
+    print("------------------------")
     for index, community in enumerate(communities, 1):
         print(f'{index}/{len(communities)} - Scraping {community}.')
         result = campaign_results_collection.find_one(
