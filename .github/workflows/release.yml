@@ -1,25 +1,32 @@
-name: deploy to lambda
+name: deploy-aws-lambda
 on:
   push:
     branches:
       - main
 jobs:
-  deploy_source:
-    name: deploy lambda from source
+  deploy:
     runs-on: ubuntu-latest
     environment: production
     env:
       MONGODB_CONNECTION: ${{ secrets.MONGODB_CONNECTION }}
       GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
       STRAPI_API_KEY: ${{ secrets.STRAPI_API_KEY }}
+    strategy:
+      matrix:
+        node-version: [10.x]
     steps:
-      - name: checkout source code
-        uses: actions/checkout@v1
-      - name: default deploy
-        uses: appleboy/lambda-action@master
+      - uses: actions/checkout@master
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
         with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_region: ${{ secrets.AWS_REGION }}
-          function_name: strapi_synchronizer
-          source: main.py
+          node-version: ${{ matrix.node-version }}
+      - name: Install Dependencies
+        run: npm install
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Serverless Deploy
+        run: npm run-script deploy
