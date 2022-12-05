@@ -92,7 +92,7 @@ def main():
     time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     google_sheet_service = GoogleSheetService.create_from_scope(scope=settings.GOOGLE_SCOPE)
-    sheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_NAME)
+    sheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
     worksheet = sheet[0]
     worksheet.clear()
 
