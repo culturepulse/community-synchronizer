@@ -6,6 +6,11 @@ on:
 jobs:
   deploy-lambda:
     runs-on: ubuntu-latest
+    environment: production
+    env:
+      MONGODB_CONNECTION: ${{ secrets.MONGODB_CONNECTION }}
+      GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
+      STRAPI_API_KEY: ${{ secrets.STRAPI_API_KEY }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
