@@ -1,6 +1,6 @@
-# MongoDB Scraper 📝
+# Strapi synchronizer 📝
 
-Script for scraping specific content from Mongo database to write results to google sheet.
+Script for scraping specific content from Mongo database to write results to Google sheet and synchronise them to the Strapi CMS.
 
 ## Dependencies
 
