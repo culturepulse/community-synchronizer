@@ -37,3 +37,23 @@ class StrapiApiClient:
             print(f"Timeout error: {e}")
         except requests.exceptions.RequestException as e:
             print(f"Unexpected error: {e}")
+
+    def delete_community(self, community_id: int):
+        try:
+            response = requests.delete(
+                url=self.api_url + f"/communities/{community_id}",
+                headers={
+                    "Authorization": f"Bearer {settings.STRAPI_API_KEY}"
+                }
+            )
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            print(f"HTTP error: {e}")
+        except requests.exceptions.ConnectionError as e:
+            print(f"Error connecting: {e}")
+        except requests.exceptions.Timeout as e:
+            print(f"Timeout error: {e}")
+        except requests.exceptions.RequestException as e:
+            print(f"Unexpected error: {e}")
+
+        return response.json()

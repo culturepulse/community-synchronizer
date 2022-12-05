@@ -59,7 +59,7 @@ access and secret key. User needs following permissions:
 ### AWS SAM template
 File `template.yaml` stores settings for the lambda function deployment. The most important part are `Layers`. \
 This attribute stores all necessary dependencies, which needs to be installed as a "Layer". Luckily we have open-source \
-Github repository with already installed layers here: [Klayers](https://github.com/keithrozario/Klayers).
+GitHub repository with already installed layers here: [Klayers](https://github.com/keithrozario/Klayers).
 
 ### Generate requirements.txt from poetry
 To generate requirements.txt file, you need to run following command: `poetry export --without-hashes --format=requirements.txt > requirements.txt`

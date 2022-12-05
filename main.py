@@ -23,16 +23,19 @@ def main():
     campaign_results_collection = mongodb_service.get_collection(database=campaign_data_db, name='campaign_results')
 
     # Print campaign results data
-    data = {'Interest Group': [], 'Community': [], 'Reason': [], 'Status': [], 'Documents': [], 'Strapi': [], 'Date': []}
+    data = {
+        'Interest Group': [], 'Community': [], 'Reason': [], 'Status': [], 'Documents': [], 'Strapi': [], 'Date': []
+    }
+    scraped_communities = []
     strapi_api_client = StrapiApiClient()
 
+    # Scrape data to "data" variable
     for index, community in enumerate(communities, 1):
         print(f'{index}/{len(communities)} - Scraping {community}.')
         result = campaign_results_collection.find_one(
             {"community": {'$exists': True}, "source": "reddit", "community": community}
         )
 
-        # If community is scraped, we need to look, how many documents are there
         if result:
             data['Interest Group'].append(result.get('interest_group', ''))
             data['Community'].append(result['community'])
@@ -50,12 +53,10 @@ def main():
                 data['Strapi'].append(False)
                 data['Reason'].append('Not found "topicModelAnalysis"')
             else:
+                # All scraped and fully functional communities
                 if count >= 200:
+                    scraped_communities.append(community)
                     data['Status'].append('Scraped')
-
-                    if len(strapi_api_client.get_community(name=community)['data']) <= 0:
-                        strapi_api_client.create_community(data={'name': community, 'isPremium': False})
-
                     data['Strapi'].append(True)
                     data['Reason'].append('')
                 else:
@@ -70,6 +71,22 @@ def main():
             data['Date'].append('')
             data['Documents'].append(0)
             data['Strapi'].append(False)
+
+    # Sync Strapi
+    for index, community in enumerate(communities, 1):
+        print(f'{index}/{len(communities)} - Syncing {community}.')
+
+        # Community not in Strapi
+        community_response = strapi_api_client.get_community(name=community)['data']
+        if len(community_response) <= 0:
+            # But if community is already scraped, add to Strapi
+            if community in scraped_communities:
+                strapi_api_client.create_community(data={'name': community, 'isPremium': False})
+        # Community in Strapi
+        else:
+            # But if community is not scraped, delete from Strapi
+            if community not in scraped_communities:
+                strapi_api_client.delete_community(community_id=community_response[0]['id'])
 
     data_frame = pandas.DataFrame(data)
     time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
