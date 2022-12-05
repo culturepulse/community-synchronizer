@@ -1,0 +1,26 @@
+.idea/
+*.DS_Store
+*.pyc
+*.pyo
+*.log
+~*.json
+*.mwb.bak
+/tmp/*
+!/tmp/.gitkeep
+/node_modules
+/media/*
+!/media/.gitkeep
+/logs/*
+!/logs/.gitkeep
+/private/*
+!/private/.gitkeep
+*.xd
+__pycache__
+~*.docx
+*.mo
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
