@@ -7,6 +7,7 @@ jobs:
   deploy_source:
     name: deploy lambda from source
     runs-on: ubuntu-latest
+    environment: production
     env:
       MONGODB_CONNECTION: ${{ secrets.MONGODB_CONNECTION }}
       GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
