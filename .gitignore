@@ -1,4 +1,6 @@
 .idea/
+.aws-sam
+.aws-sam/
 *.DS_Store
 *.pyc
 *.pyo
@@ -24,3 +26,7 @@ __pycache__
 env/
 venv/
 ENV/
+/requirements.txt
+/credentials.json
+/template.yaml
+/output.txt

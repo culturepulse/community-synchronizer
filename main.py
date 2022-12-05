@@ -10,7 +10,8 @@ from conf import settings
 from communities import communities
 from services.strapi_api_client import StrapiApiClient
 
-if __name__ == '__main__':
+
+def main():
     # Connect to MongoDB database
     mongodb_service = MongoDbService.create_from_connection(connection=settings.MONGODB_CONNECTION_STRING)
 
@@ -89,3 +90,11 @@ if __name__ == '__main__':
 
     title_range = pygsheets.DataRange(start='A1', end='G1', worksheet=worksheet)
     title_range.apply_format(model_cell)
+
+
+if __name__ == '__main__':
+    main()
+
+
+def lambda_handler(event, context):
+    main()

@@ -13,7 +13,7 @@ class GoogleSheetService(object):
         return GoogleSheetService(scope=scope)
 
     def _auth(self) -> Client:
-        client = pygsheets.authorize(client_secret='credentials.json')
+        client = pygsheets.authorize(service_file='credentials.json')
         return client
 
     def get_sheet(self, name: str) -> Spreadsheet:

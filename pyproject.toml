@@ -8,11 +8,12 @@ authors = ["Your Name <adam@culturepulse.ai>"]
 python = "^3.10"
 pymongo = "^4.3.3"
 python-dotenv = "^0.21.0"
-pydantic = "^1.10.2"
+pydantic = "1.10.1"
 pygsheets = "^2.0.5"
 numpy = "1.23.4"
 pandas = "^1.5.2"
 requests = "^2.28.1"
+wheel = "^0.38.4"
 
 [tool.poetry.dev-dependencies]
 
