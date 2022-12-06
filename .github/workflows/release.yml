@@ -23,4 +23,4 @@ jobs:
       # Build using SAM
       - run: sam build --use-container
       # Deploy on AWS
-      - run: sam deploy --parameter-overrides ParameterKey=MONGODB_CONNECTION,ParameterValue=${{ secrets.MONGODB_CONNECTION }} ParameterKey=GOOGLE_SPREADSHEET_ID,ParameterValue=${{ secrets.GOOGLE_SPREADSHEET_ID }} ParameterKey=STRAPI_API_KEY,ParameterValue=${{ secrets.STRAPI_API_KEY }}
+      - run: sam deploy --parameter-overrides ParameterKey=MongodbConnection,ParameterValue=${{ secrets.MONGODB_CONNECTION }} ParameterKey=GoogleSpreadsheetId,ParameterValue=${{ secrets.GOOGLE_SPREADSHEET_ID }} ParameterKey=StrapiApiKey,ParameterValue=${{ secrets.STRAPI_API_KEY }}
