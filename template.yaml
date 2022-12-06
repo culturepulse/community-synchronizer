@@ -1,5 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  MONGODB_CONNECTION:
+    Description: "MONGODB_CONNECTION"
+    Type: "String"
+  GOOGLE_SPREADSHEET_ID:
+    Description: "GOOGLE_SPREADSHEET_ID"
+    Type: "String"
+  STRAPI_API_KEY:
+    Description: "STRAPI_API_KEY"
+    Type: "String"
 Description: An AWS Serverless Specification template.
 Resources:
   StrapiSynchronizer:
@@ -15,6 +25,11 @@ Resources:
           Properties:
             Schedule: cron(0 * * * ? *)
             Enabled: True
+      Environment:
+        Variables:
+          MONGODB_CONNECTION: !Ref MONGODB_CONNECTION
+          GOOGLE_SPREADSHEET_ID: !Ref GOOGLE_SPREADSHEET_ID
+          STRAPI_API_KEY: !Ref STRAPI_API_KEY
       Layers:
         - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pandas:9
         - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pygsheets:9
