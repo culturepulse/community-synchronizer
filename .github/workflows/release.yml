@@ -23,6 +23,11 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       # Export requirements.txt
       - run: poetry export --without-hashes --format=requirements.txt > requirements.txt
+      # Decrypting credentials
+      - name: Decrypt google sheet credentials
+        run: ./decrypt_credentials.sh
+        env:
+          CREDENTIALS_PASSWORD: ${{ secrets.CREDENTIALS_PASSWORD }}
       # Build using SAM
       - run: sam build --use-container
       # Deploy on AWS
