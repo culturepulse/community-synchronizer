@@ -7,7 +7,6 @@ from pygsheets import Cell
 from services.google_sheet import GoogleSheetService
 from services.mongodb import MongoDbService
 from conf import settings
-from communities import communities
 from services.strapi_api_client import StrapiApiClient
 
 
@@ -28,6 +27,10 @@ def main():
     }
     scraped_communities = []
     strapi_api_client = StrapiApiClient()
+    google_sheet_service = GoogleSheetService.create_from_scope(scope=settings.GOOGLE_SCOPE)
+    sheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
+    read_sheet = sheet[1]
+    communities = list(dict.fromkeys(read_sheet.get_col(col=1, include_tailing_empty=False)[1:]))
 
     # Scrape data to "data" variable
     print("Strapi synchronizer v1.0")
@@ -98,22 +101,19 @@ def main():
 
     data_frame = pandas.DataFrame(data)
     time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    google_sheet_service = GoogleSheetService.create_from_scope(scope=settings.GOOGLE_SCOPE)
-    sheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
-    worksheet = sheet[0]
-    worksheet.clear()
+    insert_sheet = sheet[0]
+    insert_sheet.clear()
 
     data_frame = data_frame.sort_values(by=['Interest Group', 'Community'])
-    worksheet.set_dataframe(data_frame, start='A1')
-    worksheet.update_value('H1', "Scraped at:")
-    worksheet.update_value('I1', time_now)
+    insert_sheet.set_dataframe(data_frame, start='A1')
+    insert_sheet.update_value('H1', "Scraped at:")
+    insert_sheet.update_value('I1', time_now)
 
     model_cell = Cell('A1')
     model_cell.set_text_format('bold', True)
     model_cell.set_text_format('fontSize', 12)
 
-    title_range = pygsheets.DataRange(start='A1', end='G1', worksheet=worksheet)
+    title_range = pygsheets.DataRange(start='A1', end='G1', worksheet=insert_sheet)
     title_range.apply_format(model_cell)
 
 
