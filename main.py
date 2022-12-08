@@ -50,21 +50,27 @@ def main():
 
             data['Documents'].append(count)
 
-            if not result['reddit'].get('topicModelAnalysis'):
+            reddit_result = result.get('reddit')
+            if not reddit_result:
                 data['Status'].append('Not scraped')
                 data['Strapi'].append(False)
-                data['Reason'].append('Not found "topicModelAnalysis"')
+                data['Reason'].append('Not found "reddit object"')
             else:
-                # All scraped and fully functional communities
-                if count >= 200:
-                    scraped_communities.append(community)
-                    data['Status'].append('Scraped')
-                    data['Strapi'].append(True)
-                    data['Reason'].append('')
-                else:
-                    data['Status'].append('In progress')
+                if not reddit_result.get('topicModelAnalysis'):
+                    data['Status'].append('Not scraped')
                     data['Strapi'].append(False)
-                    data['Reason'].append('Documents < 200')
+                    data['Reason'].append('Not found "topicModelAnalysis"')
+                else:
+                    # All scraped and fully functional communities
+                    if count >= 200:
+                        scraped_communities.append(community)
+                        data['Status'].append('Scraped')
+                        data['Strapi'].append(True)
+                        data['Reason'].append('')
+                    else:
+                        data['Status'].append('In progress')
+                        data['Strapi'].append(False)
+                        data['Reason'].append('Documents < 200')
         else:
             data['Status'].append('Not scraped')
             data['Reason'].append('Not found in "campaign_results"')
@@ -98,7 +104,7 @@ def main():
     worksheet = sheet[0]
     worksheet.clear()
 
-    data_frame = data_frame.sort_values(by=['Status', 'Community'], ascending=[False, True])
+    data_frame = data_frame.sort_values(by=['Interest Group', 'Community'])
     worksheet.set_dataframe(data_frame, start='A1')
     worksheet.update_value('H1', "Scraped at:")
     worksheet.update_value('I1', time_now)
