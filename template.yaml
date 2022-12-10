@@ -19,7 +19,7 @@ Resources:
       Handler: main.lambda_handler
       Runtime: python3.9
       MemorySize: 256
-      Timeout: 60
+      Timeout: 120
       Events:
         ScheduledEvent:
           Type: Schedule
