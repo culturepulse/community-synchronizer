@@ -10,7 +10,9 @@ jobs:
     env:
       MONGODB_CONNECTION: ${{ secrets.MONGODB_CONNECTION }}
       GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
+      STRAPI_URL: ${{ secrets.STRAPI_URL }}
       STRAPI_API_KEY: ${{ secrets.STRAPI_API_KEY }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -40,4 +42,10 @@ jobs:
       # Build using SAM
       - run: sam build --use-container
       # Deploy on AWS
-      - run: sam deploy --parameter-overrides "MongodbConnection=${{ secrets.MONGODB_CONNECTION }} GoogleSpreadsheetId=${{ secrets.GOOGLE_SPREADSHEET_ID }} StrapiApiKey=${{ secrets.STRAPI_API_KEY }}"
+      - run: |
+        sam deploy --parameter-overrides " \
+          MongodbConnection=${{ secrets.MONGODB_CONNECTION }} \
+          GoogleSpreadsheetId=${{ secrets.GOOGLE_SPREADSHEET_ID }} \
+          StrapiUrl=${{ secrets.STRAPI_URL }} \
+          StrapiApiKey=${{ secrets.STRAPI_API_KEY }} \
+          SentryDsn=${{ secrets.SENTRY_DSN }}"
