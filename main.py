@@ -1,16 +1,53 @@
 from datetime import datetime
+from typing import Tuple
 
 import pandas
 import pygsheets
+import sentry_sdk
 from pygsheets import Cell
 
+import version
 from services.google_sheet import GoogleSheetService
 from services.mongodb import MongoDbService
 from conf import settings
-from services.strapi_api_client import StrapiApiClient
+from services.strapi.api_client import StrapiApiClient
 
 
-def main():
+def get_communities(spreadsheet) -> list:
+    sheet = spreadsheet[1]
+    communities = list(dict.fromkeys(sheet.get_col(col=1, include_tailing_empty=False)[1:]))
+
+    return communities
+
+
+def sync_strapi(communities: list, scraped_communities: list):
+    strapi_api_client = StrapiApiClient(
+        api_url=settings.STRAPI_URL,
+        token=f"Bearer {settings.STRAPI_API_KEY}"
+    )
+
+    for index, community in enumerate(communities, 1):
+        print(f'{index}/{len(communities)} - Syncing {community}.')
+
+        # Community not in Strapi
+        community_response = strapi_api_client.get_community(name=community)
+        data = community_response.get('data')
+
+        if data:
+            if len(community_response) <= 0:
+                # But if community is already scraped, add to Strapi
+                if community in scraped_communities:
+                    strapi_api_client.create_community(data={'name': community, 'isPremium': False})
+            # Community in Strapi
+            else:
+                # But if community is not scraped, delete from Strapi
+                if community not in scraped_communities:
+                    strapi_api_client.delete_community(community_id=community_response[0]['id'])
+        else:
+            print('No data')
+
+
+def scrape_mongodb(communities: list) -> Tuple[dict, list]:
     # Connect to MongoDB database
     mongodb_service = MongoDbService.create_from_connection(connection=settings.MONGODB_CONNECTION)
 
@@ -21,20 +58,12 @@ def main():
     # Get needed collections
     campaign_results_collection = mongodb_service.get_collection(database=campaign_data_db, name='campaign_results')
 
-    # Print campaign results data
     data = {
         'Interest Group': [], 'Community': [], 'Reason': [], 'Status': [], 'Documents': [], 'Strapi': [], 'Date': []
     }
     scraped_communities = []
-    strapi_api_client = StrapiApiClient()
-    google_sheet_service = GoogleSheetService.create_from_scope(scope=settings.GOOGLE_SCOPE)
-    sheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
-    read_sheet = sheet[1]
-    communities = list(dict.fromkeys(read_sheet.get_col(col=1, include_tailing_empty=False)[1:]))
 
     # Scrape data to "data" variable
-    print("Strapi synchronizer v1.0")
-    print("------------------------")
     for index, community in enumerate(communities, 1):
         print(f'{index}/{len(communities)} - Scraping {community}.')
         result = campaign_results_collection.find_one(
@@ -83,38 +112,52 @@ def main():
             data['Documents'].append(0)
             data['Strapi'].append(False)
 
-    # Sync Strapi
-    for index, community in enumerate(communities, 1):
-        print(f'{index}/{len(communities)} - Syncing {community}.')
+    return data, scraped_communities
 
-        # Community not in Strapi
-        community_response = strapi_api_client.get_community(name=community)['data']
-        if len(community_response) <= 0:
-            # But if community is already scraped, add to Strapi
-            if community in scraped_communities:
-                strapi_api_client.create_community(data={'name': community, 'isPremium': False})
-        # Community in Strapi
-        else:
-            # But if community is not scraped, delete from Strapi
-            if community not in scraped_communities:
-                strapi_api_client.delete_community(community_id=community_response[0]['id'])
 
+def write_data(spreadsheet, data: dict):
     data_frame = pandas.DataFrame(data)
     time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    insert_sheet = sheet[0]
-    insert_sheet.clear()
+    sheet = spreadsheet[0]
+    sheet.clear()
 
     data_frame = data_frame.sort_values(by=['Interest Group', 'Community'])
-    insert_sheet.set_dataframe(data_frame, start='A1')
-    insert_sheet.update_value('H1', "Scraped at:")
-    insert_sheet.update_value('I1', time_now)
+    sheet.set_dataframe(data_frame, start='A1')
+    sheet.update_value('H1', "Scraped at:")
+    sheet.update_value('I1', time_now)
 
     model_cell = Cell('A1')
     model_cell.set_text_format('bold', True)
     model_cell.set_text_format('fontSize', 12)
 
-    title_range = pygsheets.DataRange(start='A1', end='G1', worksheet=insert_sheet)
+    title_range = pygsheets.DataRange(start='A1', end='G1', worksheet=sheet)
     title_range.apply_format(model_cell)
+
+
+def main():
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        release=version.__version__,
+        traces_sample_rate=1.0
+    )
+    print(f"Strapi synchronizer {version.__version__}")
+    print("------------------------")
+
+    # 1. Get Spreadsheet
+    google_sheet_service = GoogleSheetService.create_from_scope(scope=settings.GOOGLE_SCOPE)
+    spreadsheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
+
+    # 2. Get list of communities from specific sheet column
+    communities = get_communities(spreadsheet)
+
+    # 3. Scrape MongoDB according to the list of communities, returns only list of successfully scraped communities
+    data, scraped_communities = scrape_mongodb(communities=communities)
+
+    # 4. Synchronize Strapi communities according to scraped data
+    sync_strapi(communities=communities, scraped_communities=scraped_communities)
+
+    # 5. Write data into specific Google sheet
+    write_data(spreadsheet=spreadsheet, data=data)
 
 
 if __name__ == '__main__':
