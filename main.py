@@ -44,7 +44,7 @@ def sync_strapi(communities: list, scraped_communities: list):
                 if community not in scraped_communities:
                     strapi_api_client.delete_community(community_id=community_response[0]['id'])
         else:
-            print('No data')
+            print(f'No data: {community_response}')
 
 
 def scrape_mongodb(communities: list) -> Tuple[dict, list]:
@@ -121,7 +121,8 @@ def write_data(spreadsheet, data: dict):
     sheet = spreadsheet[0]
     sheet.clear()
 
-    data_frame = data_frame.sort_values(by=['Interest Group', 'Community'])
+    # Order values and normalize NaN values
+    data_frame = data_frame.sort_values(by=['Interest Group', 'Community'], ascending=[False, True]).fillna('')
     sheet.set_dataframe(data_frame, start='A1')
     sheet.update_value('H1', "Scraped at:")
     sheet.update_value('I1', time_now)
