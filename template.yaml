@@ -30,7 +30,7 @@ Resources:
         ScheduledEvent:
           Type: Schedule
           Properties:
-            Schedule: cron(0 * * * ? *)
+            Schedule: cron(*/15 * * * ? *)
             Enabled: True
       Environment:
         Variables:
