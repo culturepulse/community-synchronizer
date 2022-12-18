@@ -43,9 +43,4 @@ jobs:
       - run: sam build --use-container
       # Deploy on AWS
       - run: |
-        sam deploy --parameter-overrides " \
-          MongodbConnection=${{ secrets.MONGODB_CONNECTION }} \
-          GoogleSpreadsheetId=${{ secrets.GOOGLE_SPREADSHEET_ID }} \
-          StrapiUrl=${{ secrets.STRAPI_URL }} \
-          StrapiApiKey=${{ secrets.STRAPI_API_KEY }} \
-          SentryDsn=${{ secrets.SENTRY_DSN }}"
+        sam deploy --parameter-overrides "MongodbConnection=${{ secrets.MONGODB_CONNECTION }} GoogleSpreadsheetId=${{ secrets.GOOGLE_SPREADSHEET_ID }} StrapiUrl=${{ secrets.STRAPI_URL }} StrapiApiKey=${{ secrets.STRAPI_API_KEY }} SentryDsn=${{ secrets.SENTRY_DSN }}"

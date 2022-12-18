@@ -76,5 +76,10 @@ To run and test the project locally before the deployment, run command: `sam loc
 
 To deploy the project, run command: `sam deploy`.
 
+## Contribution TODO
+- Get rid of a huge `pandas` dependency.
+- Add AWS Secrets Manager support (for now all secrets inside GitHub Secrets - dirty solution).
+- Change to private GitHub repository (for now due to free GitHub actions policy).
+
 ---
 Made with 💜 by CulturePulse s.r.o. (c) 2022
