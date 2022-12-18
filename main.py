@@ -3,10 +3,8 @@ from typing import Tuple
 
 import pandas
 import pygsheets
-import sentry_sdk
+# import sentry_sdk
 from pygsheets import Cell
-
-import version
 from services.google_sheet import GoogleSheetService
 from services.mongodb import MongoDbService
 from conf import settings
@@ -34,7 +32,7 @@ def sync_strapi(communities: list, scraped_communities: list):
         data = community_response.get('data')
 
         if data:
-            if len(community_response) <= 0:
+            if len(data) <= 0:
                 # But if community is already scraped, add to Strapi
                 if community in scraped_communities:
                     strapi_api_client.create_community(data={'name': community, 'isPremium': False})
@@ -42,7 +40,7 @@ def sync_strapi(communities: list, scraped_communities: list):
             else:
                 # But if community is not scraped, delete from Strapi
                 if community not in scraped_communities:
-                    strapi_api_client.delete_community(community_id=community_response[0]['id'])
+                    strapi_api_client.delete_community(community_id=data[0]['id'])
         else:
             print(f'No data: {community_response}')
 
@@ -59,7 +57,16 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
     campaign_results_collection = mongodb_service.get_collection(database=campaign_data_db, name='campaign_results')
 
     data = {
-        'Interest Group': [], 'Community': [], 'Reason': [], 'Status': [], 'Documents': [], 'Strapi': [], 'Date': []
+        'Interest Group': [],
+        'Community': [],
+        'Reason': [],
+        'Status': [],
+        'Documents': [],
+        'Strapi': [],
+        'Date': [],
+        'topicModelAnalysis': [],
+        'marketprofile': [],
+        'psychData': []
     }
     scraped_communities = []
 
@@ -87,13 +94,21 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
                 data['Status'].append('Not scraped')
                 data['Strapi'].append(False)
                 data['Reason'].append('Not found "reddit object"')
+                data['topicModelAnalysis'].append(False)
+                data['marketprofile'].append(False)
+                data['psychData'].append(False)
             else:
-                if not reddit_result.get('topicModelAnalysis'):
-                    data['Status'].append('Not scraped')
-                    data['Strapi'].append(False)
-                    data['Reason'].append('Not found "topicModelAnalysis"')
-                else:
+                topic_model_analysis = reddit_result.get('topicModelAnalysis')
+                market_profile = reddit_result.get('marketprofile')
+                psych_data = reddit_result.get('psychData')
+
+                # If all analyzed data are valid
+                if topic_model_analysis and market_profile and psych_data:
                     # All scraped and fully functional communities
+                    data['topicModelAnalysis'].append(True)
+                    data['marketprofile'].append(True)
+                    data['psychData'].append(True)
+
                     if count >= 200:
                         scraped_communities.append(community)
                         data['Status'].append('Scraped')
@@ -103,6 +118,30 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
                         data['Status'].append('In progress')
                         data['Strapi'].append(False)
                         data['Reason'].append('Documents < 200')
+                # If some of needed data are not valid
+                else:
+                    reasons = []
+                    data['Status'].append('Not scraped')
+                    data['Strapi'].append(False)
+
+                    if not reddit_result.get('topicModelAnalysis'):
+                        reasons.append('topicModelAnalysis')
+                        data['topicModelAnalysis'].append(False)
+                    else:
+                        data['topicModelAnalysis'].append(True)
+
+                    if not reddit_result.get('marketprofile'):
+                        reasons.append('marketprofile')
+                        data['marketprofile'].append(False)
+                    else:
+                        data['marketprofile'].append(True)
+
+                    if not reddit_result.get('psychData'):
+                        reasons.append('psychData')
+                        data['psychData'].append(False)
+                    else:
+                        data['psychData'].append(True)
+                    data['Reason'].append(f'Not found: {str(reasons)}')
         else:
             data['Status'].append('Not scraped')
             data['Reason'].append('Not found in "campaign_results"')
@@ -111,6 +150,9 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
             data['Date'].append('')
             data['Documents'].append(0)
             data['Strapi'].append(False)
+            data['topicModelAnalysis'].append(False)
+            data['marketprofile'].append(False)
+            data['psychData'].append(False)
 
     return data, scraped_communities
 
@@ -124,25 +166,26 @@ def write_data(spreadsheet, data: dict):
     # Order values and normalize NaN values
     data_frame = data_frame.sort_values(by=['Interest Group', 'Community'], ascending=[False, True]).fillna('')
     sheet.set_dataframe(data_frame, start='A1')
-    sheet.update_value('H1', "Scraped at:")
-    sheet.update_value('I1', time_now)
+    sheet.update_value('K1', "Scraped at:")
+    sheet.update_value('L1', time_now)
 
     model_cell = Cell('A1')
     model_cell.set_text_format('bold', True)
     model_cell.set_text_format('fontSize', 12)
 
-    title_range = pygsheets.DataRange(start='A1', end='G1', worksheet=sheet)
+    title_range = pygsheets.DataRange(start='A1', end='J1', worksheet=sheet)
     title_range.apply_format(model_cell)
 
 
 def main():
-    sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
-        release=version.__version__,
-        traces_sample_rate=1.0
-    )
-    print(f"Strapi synchronizer {version.__version__}")
-    print("------------------------")
+    # TODO: Add Sentry integration (AWS Lambda size issue)
+    # sentry_sdk.init(
+    #     dsn=settings.SENTRY_DSN,
+    #     release=version.__version__,
+    #     traces_sample_rate=1.0
+    # )
+    # print(f"Strapi synchronizer {version.__version__}")
+    # print("------------------------")
 
     # 1. Get Spreadsheet
     google_sheet_service = GoogleSheetService.create_from_scope(scope=settings.GOOGLE_SCOPE)

@@ -11,3 +11,10 @@
 
 - **Changed**: Ordering of Interest groups column in the sheet
 - **Fixed**: Replacing NaN values with empty string to normalise data
+
+## 0.1.2 : 18.12.2022
+
+- **Added**: Three new columns into the sheet `topicModelAnalysis`, `marketprofile` and `psychData`
+- **Added**: New `Scraped` status checkers according to these new added columns
+- **Added**: Sentry support (for now inactive due to AWS Lambda limitations)
+- **Changed**: Updated `Reason` column message format
