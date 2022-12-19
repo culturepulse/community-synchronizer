@@ -35,7 +35,7 @@ def sync_strapi(communities: list, scraped_communities: list):
             if len(data) <= 0:
                 # But if community is already scraped, add to Strapi
                 if community in scraped_communities:
-                    strapi_api_client.create_community(data={'name': community, 'isPremium': False})
+                    strapi_api_client.create_community(data={'name': community, 'isPremium': True})
             # Community in Strapi
             else:
                 # But if community is not scraped, delete from Strapi
