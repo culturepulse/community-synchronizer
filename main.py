@@ -34,25 +34,36 @@ def sync_strapi(communities: list, scraped_communities: list):
         community_response = strapi_api_client.get_community(name=community)
         data = community_response.get('data')
 
-        if data:
-            if len(data) <= 0:
-                # But if community is already scraped, add to Strapi
-                if community in scraped_communities:
-                    # All communities by default should be premium except blacklist ones
-                    if community in blacklist_premium_communities:
-                        is_premium = False
-                    else:
-                        is_premium = True
+        if not data or len(data) <= 0:
+            # But if community is already scraped, add to Strapi
+            if community in scraped_communities:
+                # All communities by default should be premium except blacklist ones
+                if community in blacklist_premium_communities:
+                    is_premium = False
+                else:
+                    is_premium = True
 
-                    strapi_api_client.create_community(data={'name': community, 'isPremium': is_premium})
+                strapi_api_client.create_community(data={'name': community, 'isPremium': is_premium})
 
-            # Community in Strapi
-            else:
-                # But if community is not scraped, delete from Strapi
-                if community not in scraped_communities:
-                    strapi_api_client.delete_community(community_id=data[0]['id'])
+        # Community in Strapi
         else:
-            print(f'No data: {community_response}')
+            # But if community is not scraped, delete from Strapi
+            if community not in scraped_communities:
+                strapi_api_client.delete_community(community_id=data[0]['id'])
+
+
+def add_sheet_row(row_data: dict, all_data: dict) -> dict:
+    all_data['Interest Group'].append(row_data['Interest Group'])
+    all_data['Community'].append(row_data['Community'])
+    all_data['Reason'].append(row_data['Reason'])
+    all_data['Status'].append(row_data['Status'])
+    all_data['Documents'].append(row_data['Documents'])
+    all_data['Strapi'].append(row_data['Strapi'])
+    all_data['Date'].append(row_data['Date'])
+    all_data['topicModelAnalysis'].append(row_data['topicModelAnalysis'])
+    all_data['marketprofile'].append(row_data['marketprofile'])
+    all_data['psychData'].append(row_data['psychData'])
+    return all_data
 
 
 def scrape_mongodb(communities: list) -> Tuple[dict, list]:
@@ -66,7 +77,7 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
     # Get needed collections
     campaign_results_collection = mongodb_service.get_collection(database=campaign_data_db, name='campaign_results')
 
-    data = {
+    all_data = {
         'Interest Group': [],
         'Community': [],
         'Reason': [],
@@ -87,84 +98,100 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
             {"community": {'$exists': True}, "source": "reddit", "community": community}
         )
 
+        # If result for specific community name in the MongoDB
         if result:
-            data['Interest Group'].append(result.get('interest_group', ''))
-            data['Community'].append(result['community'])
-            data['Date'].append(result['timestamp'])
-
             social_media_collection = mongodb_service.get_collection(
                 database=culturepulse_social_media_db, name=f'reddit_data_{community}'
             )
-            count = (social_media_collection.estimated_document_count() or 0)
+            document_count = (social_media_collection.estimated_document_count() or 0)
 
-            data['Documents'].append(count)
+            # TODO: create dataclass
+            row_data = {
+                'Interest Group': result.get('interest_group', ''),
+                'Community': result['community'],
+                'Reason': '',
+                'Status': 'Finished',
+                'Documents': document_count,
+                'Strapi': True,
+                'Date': result['timestamp'],
+                'topicModelAnalysis': True,
+                'marketprofile': True,
+                'psychData': True
+            }
 
+            # 1. If scraped less than 200 documents
+            if document_count < 200:
+                row_data['Status'] = 'Not scraped'
+                row_data['Strapi'] = False
+                row_data['Reason'] = 'Documents < 200'
+                row_data['topicModelAnalysis'] = False
+                row_data['marketprofile'] = False
+                row_data['psychData'] = False
+                all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+                continue
+
+            # 2. If not REDDIT data in result
             reddit_result = result.get('reddit')
             if not reddit_result:
-                data['Status'].append('Not scraped')
-                data['Strapi'].append(False)
-                data['Reason'].append('Not found "reddit object"')
-                data['topicModelAnalysis'].append(False)
-                data['marketprofile'].append(False)
-                data['psychData'].append(False)
-            else:
-                topic_model_analysis = reddit_result.get('topicModelAnalysis')
-                market_profile = reddit_result.get('marketprofile')
-                psych_data = reddit_result.get('psychData')
+                row_data['Status'] = 'Not analysed'
+                row_data['Strapi'] = False
+                row_data['Reason'] = 'Not found "reddit object"'
+                row_data['topicModelAnalysis'] = False
+                row_data['marketprofile'] = False
+                row_data['psychData'] = False
+                all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+                continue
 
-                # If all analyzed data are valid
-                if topic_model_analysis and market_profile and psych_data:
-                    # All scraped and fully functional communities
-                    data['topicModelAnalysis'].append(True)
-                    data['marketprofile'].append(True)
-                    data['psychData'].append(True)
+            # 3. If not "topicModelAnalysis" or "marketprofile" or "psychData"
+            topic_model_analysis = reddit_result.get('topicModelAnalysis')
+            market_profile = reddit_result.get('marketprofile')
+            psych_data = reddit_result.get('psychData')
 
-                    if count >= 200:
-                        scraped_communities.append(community)
-                        data['Status'].append('Scraped')
-                        data['Strapi'].append(True)
-                        data['Reason'].append('')
-                    else:
-                        data['Status'].append('In progress')
-                        data['Strapi'].append(False)
-                        data['Reason'].append('Documents < 200')
-                # If some of needed data are not valid
-                else:
-                    reasons = []
-                    data['Status'].append('Not scraped')
-                    data['Strapi'].append(False)
+            if not topic_model_analysis or not market_profile or not psych_data:
+                reasons = []
+                statuses = []
+                row_data['Strapi'] = False
 
-                    if not reddit_result.get('topicModelAnalysis'):
-                        reasons.append('topicModelAnalysis')
-                        data['topicModelAnalysis'].append(False)
-                    else:
-                        data['topicModelAnalysis'].append(True)
+                # If not "topicModelAnalysis"
+                if not topic_model_analysis:
+                    reasons.append('topicModelAnalysis')
+                    statuses.append('Not analysed')
+                    row_data['topicModelAnalysis'] = False
 
-                    if not reddit_result.get('marketprofile'):
-                        reasons.append('marketprofile')
-                        data['marketprofile'].append(False)
-                    else:
-                        data['marketprofile'].append(True)
+                # If not "psychData" or "marketprofile"
+                if not psych_data or not market_profile:
+                    statuses.append('Not profiled')
 
-                    if not reddit_result.get('psychData'):
+                    if not psych_data:
                         reasons.append('psychData')
-                        data['psychData'].append(False)
-                    else:
-                        data['psychData'].append(True)
-                    data['Reason'].append(f'Not found: {str(reasons)}')
-        else:
-            data['Status'].append('Not scraped')
-            data['Reason'].append('Not found in "campaign_results"')
-            data['Interest Group'].append('')
-            data['Community'].append(community)
-            data['Date'].append('')
-            data['Documents'].append(0)
-            data['Strapi'].append(False)
-            data['topicModelAnalysis'].append(False)
-            data['marketprofile'].append(False)
-            data['psychData'].append(False)
+                        row_data['psychData'] = False
+                    if not market_profile:
+                        reasons.append('marketprofile')
+                        row_data['marketprofile'] = False
 
-    return data, scraped_communities
+                row_data['Reason'] = f'Not found: {",".join(reasons)}'
+                row_data['Status'] = ','.join(statuses)
+                all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+                continue
+
+            # 4. If all good, add community name to "scraped_communities" list
+            all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+            scraped_communities.append(community)
+
+        # If NO result for specific community name in the MongoDB
+        else:
+            all_data['Status'].append('Not scraped')
+            all_data['Reason'].append('Not found in "campaign_results"')
+            all_data['Interest Group'].append('')
+            all_data['Community'].append(community)
+            all_data['Date'].append('')
+            all_data['Documents'].append(0)
+            all_data['Strapi'].append(False)
+            all_data['topicModelAnalysis'].append(False)
+            all_data['marketprofile'].append(False)
+            all_data['psychData'].append(False)
+
+    return all_data, scraped_communities
 
 
 def write_data(spreadsheet, data: dict):

@@ -18,3 +18,10 @@
 - **Added**: New `Scraped` status checkers according to these new added columns
 - **Added**: Sentry support (for now inactive due to AWS Lambda limitations)
 - **Changed**: Updated `Reason` column message format
+
+## 0.1.3 : 20.12.2022
+
+- **Added**: Changed error handling to be conditional, more readable and intuitive
+- **Added**: Add new statuses: `Not analysed`, `Not profiled`
+- **Changed**: Renamed `Scraped` status to `Finished`
+- **Fix**: Communication with strapi is now established correctly

@@ -1,5 +1,4 @@
 import json
-from json import JSONEncoder
 from typing import Union, Dict
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -25,7 +24,6 @@ class StrapiApiClient:
         response = self._request(
             method='POST',
             endpoint_url=f"{self._api_url}/communities",
-            query={'populate': 'communities'},
             payload={'data': data}
         )
         return response
@@ -47,7 +45,7 @@ class StrapiApiClient:
         )
 
         if payload and isinstance(payload, dict):
-            request.data = json.loads(json.dumps(payload, cls=JSONEncoder))
+            request.data = json.dumps(payload).encode('utf-8')
             request.headers['Content-Type'] = 'application/json'
 
         if query and isinstance(query, dict):
