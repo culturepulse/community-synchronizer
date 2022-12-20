@@ -19,6 +19,9 @@ def get_communities(spreadsheet) -> list:
 
 
 def sync_strapi(communities: list, scraped_communities: list):
+    blacklist_premium_communities = [
+        'cars'
+    ]
     strapi_api_client = StrapiApiClient(
         api_url=settings.STRAPI_URL,
         token=f"Bearer {settings.STRAPI_API_KEY}"
@@ -35,7 +38,14 @@ def sync_strapi(communities: list, scraped_communities: list):
             if len(data) <= 0:
                 # But if community is already scraped, add to Strapi
                 if community in scraped_communities:
-                    strapi_api_client.create_community(data={'name': community, 'isPremium': True})
+                    # All communities by default should be premium except blacklist ones
+                    if community in blacklist_premium_communities:
+                        is_premium = False
+                    else:
+                        is_premium = True
+
+                    strapi_api_client.create_community(data={'name': community, 'isPremium': is_premium})
+
             # Community in Strapi
             else:
                 # But if community is not scraped, delete from Strapi
