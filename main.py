@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Tuple
+from zoneinfo import ZoneInfo
 
 import pandas
 import pygsheets
@@ -196,7 +197,7 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
 
 def write_data(spreadsheet, data: dict):
     data_frame = pandas.DataFrame(data)
-    time_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_now = datetime.now(tz=ZoneInfo('Europe/Bratislava')).strftime("%Y-%m-%d %H:%M:%S")
     sheet = spreadsheet[0]
     sheet.clear()
 
