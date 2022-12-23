@@ -1,14 +1,14 @@
 from pymongo import MongoClient
 
 
-class MongoDbService(object):
+class MongoDbClient(object):
     def __init__(self, connection: str):
         self._connection = connection
         self._client = self._auth()
 
     @classmethod
-    def create_from_connection(cls, connection: str) -> 'MongoDbService':
-        return MongoDbService(connection=connection)
+    def create_from_connection(cls, connection: str) -> 'MongoDbClient':
+        return MongoDbClient(connection=connection)
 
     def _auth(self):
         return MongoClient(self._connection, wTimeoutMS=0)

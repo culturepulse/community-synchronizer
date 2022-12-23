@@ -21,7 +21,7 @@ Resources:
   StrapiSynchronizer:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: strapi_synchronizer
+      FunctionName: community_synchronizer
       Handler: main.lambda_handler
       Runtime: python3.9
       MemorySize: 256
@@ -40,8 +40,7 @@ Resources:
           STRAPI_API_KEY: !Ref StrapiApiKey
           SENTRY_DSN: !Ref SentryDsn
       Layers:
-        - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pandas:9
         - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pygsheets:9
         - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pymongo:5
         - arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pydantic:1
-#        - arn:aws:lambda:us-east-1:943013980633:layer:SentryPythonServerlessSDK:44
+        - arn:aws:lambda:us-east-1:943013980633:layer:SentryPythonServerlessSDK:44
