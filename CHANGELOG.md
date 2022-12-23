@@ -25,3 +25,8 @@
 - **Added**: Add new statuses: `Not analysed`, `Not profiled`
 - **Changed**: Renamed `Scraped` status to `Finished`
 - **Fix**: Communication with strapi is now established correctly
+
+## 0.2.0 : 23.12.2022
+
+- **Removed**: Pandas dependency
+- **Added**: Sentry integration

@@ -3,14 +3,14 @@ from pygsheets import Spreadsheet
 from pygsheets.client import Client
 
 
-class GoogleSheetService(object):
+class GoogleSheetClient(object):
     def __init__(self, scope: str):
         self._scope = scope
         self._client = self._auth()
 
     @classmethod
-    def create_from_scope(cls, scope: str) -> 'GoogleSheetService':
-        return GoogleSheetService(scope=scope)
+    def create_from_scope(cls, scope: str) -> 'GoogleSheetClient':
+        return GoogleSheetClient(scope=scope)
 
     @staticmethod
     def _auth() -> Client:
