@@ -1,10 +1,10 @@
 import dataclasses
+import math
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Tuple, List, Union
 from zoneinfo import ZoneInfo
 
-import pandas
 import pygsheets
 # import sentry_sdk
 from pygsheets import Cell
@@ -122,11 +122,14 @@ def scrape_mongodb(communities: list) -> Tuple[List[Union[CommunityTitleRow, Com
                 database=culturepulse_social_media_db, name=f'reddit_data_{community}'
             )
             document_count = (social_media_collection.estimated_document_count() or 0)
+            interest_group = result.get('interest_group', '')
+            if isinstance(interest_group, float):
+                if math.isnan(interest_group):
+                    interest_group = ''
 
-            # TODO: create dataclass
             row_data = CommunityContentRow(
                 community=result.get('community', ''),
-                interest_group=result.get('interest_group', ''),
+                interest_group=interest_group,
                 documents=document_count,
                 date=result['timestamp'].astimezone(tz=ZoneInfo('Europe/Bratislava')).strftime("%Y-%m-%d %H:%M:%S")
                 if isinstance(result['timestamp'], datetime) else str(result['timestamp'])
@@ -218,16 +221,14 @@ def write_data(spreadsheet, all_data: List[Union[CommunityTitleRow, CommunityCon
     sheet = spreadsheet[0]
     sheet.clear()
 
-    # Order values and normalize NaN values
-    # data_frame = data_frame.sort_values(by=['Interest Group', 'Community'], ascending=[False, True]).fillna('')
-    cells_to_insert = []
-    for row_index, item in enumerate(all_data, 1):
-        [getattr(item, field.name) for field in dataclasses.fields(item)]
-        for col_index, field in enumerate(dataclasses.fields(item), 1):
-            cells_to_insert.append(Cell(pos=f'{chr(col_index+64)}{row_index}', val=getattr(item, field.name)))
+    data_to_insert = []
+    for item in all_data:
+        data_to_insert.append([getattr(item, field.name) for field in dataclasses.fields(item)])
 
-    sheet.update_cells(cells_to_insert)
+    end_column = chr(len(asdict(all_data[0]))+65)
+    end_row = len(all_data)+1
 
+    sheet.update_values(crange=f'A1:{end_column}{end_row}', values=data_to_insert)
     sheet.update_value('K1', "Scraped at:")
     sheet.update_value('L1', time_now)
 
@@ -237,6 +238,9 @@ def write_data(spreadsheet, all_data: List[Union[CommunityTitleRow, CommunityCon
 
     title_range = pygsheets.DataRange(start='A1', end='J1', worksheet=sheet)
     title_range.apply_format(model_cell)
+
+    sheet.sort_range('A1', f'A{end_row}', basecolumnindex=0, sortorder='ASCENDING')
+    sheet.sort_range(start, end, basecolumnindex=0, sortorder='ASCENDING')
 
 
 def main():
@@ -254,16 +258,16 @@ def main():
     spreadsheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
 
     # 2. Get list of communities from specific sheet column
-    communities = get_communities(spreadsheet)
+    # communities = get_communities(spreadsheet)
 
     # 3. Scrape MongoDB according to the list of communities, returns only list of successfully scraped communities
-    all_communities, scraped_communities = scrape_mongodb(communities=communities)
+    # all_communities, scraped_communities = scrape_mongodb(communities=communities)
 
     # 4. Synchronize Strapi communities according to scraped data
     # sync_strapi(communities=communities, scraped_communities=scraped_communities)
 
     # 5. Write data into specific Google sheet
-    write_data(spreadsheet=spreadsheet, all_data=all_communities)
+    write_data(spreadsheet=spreadsheet, all_data=[])
 
 
 if __name__ == '__main__':
