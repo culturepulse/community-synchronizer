@@ -12,7 +12,8 @@ class GoogleSheetService(object):
     def create_from_scope(cls, scope: str) -> 'GoogleSheetService':
         return GoogleSheetService(scope=scope)
 
-    def _auth(self) -> Client:
+    @staticmethod
+    def _auth() -> Client:
         client = pygsheets.authorize(service_file='credentials.json')
         return client
 

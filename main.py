@@ -1,5 +1,7 @@
+import dataclasses
+from dataclasses import dataclass, asdict
 from datetime import datetime
-from typing import Tuple
+from typing import Tuple, List, Union
 from zoneinfo import ZoneInfo
 
 import pandas
@@ -10,6 +12,34 @@ from services.google_sheet import GoogleSheetService
 from services.mongodb import MongoDbService
 from conf import settings
 from services.strapi.api_client import StrapiApiClient
+
+
+@dataclass
+class CommunityTitleRow:
+    interest_group: str
+    community: str
+    documents: str
+    date: str
+    reason: str
+    status: str
+    strapi: str
+    topic_model_analysis: str
+    market_profile: str
+    psych_data: str
+
+
+@dataclass
+class CommunityContentRow:
+    interest_group: str
+    community: str
+    documents: int
+    date: str
+    reason: str = ''
+    status: str = 'Finished'
+    strapi: bool = True
+    topic_model_analysis: bool = True
+    market_profile: bool = True
+    psych_data: bool = True
 
 
 def get_communities(spreadsheet) -> list:
@@ -53,21 +83,7 @@ def sync_strapi(communities: list, scraped_communities: list):
                 strapi_api_client.delete_community(community_id=data[0]['id'])
 
 
-def add_sheet_row(row_data: dict, all_data: dict) -> dict:
-    all_data['Interest Group'].append(row_data['Interest Group'])
-    all_data['Community'].append(row_data['Community'])
-    all_data['Reason'].append(row_data['Reason'])
-    all_data['Status'].append(row_data['Status'])
-    all_data['Documents'].append(row_data['Documents'])
-    all_data['Strapi'].append(row_data['Strapi'])
-    all_data['Date'].append(row_data['Date'])
-    all_data['topicModelAnalysis'].append(row_data['topicModelAnalysis'])
-    all_data['marketprofile'].append(row_data['marketprofile'])
-    all_data['psychData'].append(row_data['psychData'])
-    return all_data
-
-
-def scrape_mongodb(communities: list) -> Tuple[dict, list]:
+def scrape_mongodb(communities: list) -> Tuple[List[Union[CommunityTitleRow, CommunityContentRow]], List[str]]:
     # Connect to MongoDB database
     mongodb_service = MongoDbService.create_from_connection(connection=settings.MONGODB_CONNECTION)
 
@@ -77,22 +93,23 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
 
     # Get needed collections
     campaign_results_collection = mongodb_service.get_collection(database=campaign_data_db, name='campaign_results')
-
-    all_data = {
-        'Interest Group': [],
-        'Community': [],
-        'Reason': [],
-        'Status': [],
-        'Documents': [],
-        'Strapi': [],
-        'Date': [],
-        'topicModelAnalysis': [],
-        'marketprofile': [],
-        'psychData': []
-    }
     scraped_communities = []
+    all_rows = []
 
     # Scrape data to "data" variable
+    all_rows.append(CommunityTitleRow(
+        interest_group='Interest Group',
+        community='Community',
+        reason='Reason',
+        status='Status',
+        documents='Documents',
+        strapi='Strapi',
+        date='Date',
+        topic_model_analysis='topicModelAnalysis',
+        market_profile='marketprofile',
+        psych_data='psychData'
+    ))
+
     for index, community in enumerate(communities, 1):
         print(f'{index}/{len(communities)} - Scraping {community}.')
         result = campaign_results_collection.find_one(
@@ -107,40 +124,37 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
             document_count = (social_media_collection.estimated_document_count() or 0)
 
             # TODO: create dataclass
-            row_data = {
-                'Interest Group': result.get('interest_group', ''),
-                'Community': result['community'],
-                'Reason': '',
-                'Status': 'Finished',
-                'Documents': document_count,
-                'Strapi': True,
-                'Date': result['timestamp'],
-                'topicModelAnalysis': True,
-                'marketprofile': True,
-                'psychData': True
-            }
+            row_data = CommunityContentRow(
+                community=result.get('community', ''),
+                interest_group=result.get('interest_group', ''),
+                documents=document_count,
+                date=result['timestamp'].astimezone(tz=ZoneInfo('Europe/Bratislava')).strftime("%Y-%m-%d %H:%M:%S")
+                if isinstance(result['timestamp'], datetime) else str(result['timestamp'])
+            )
 
             # 1. If scraped less than 200 documents
             if document_count < 200:
-                row_data['Status'] = 'Not scraped'
-                row_data['Strapi'] = False
-                row_data['Reason'] = 'Documents < 200'
-                row_data['topicModelAnalysis'] = False
-                row_data['marketprofile'] = False
-                row_data['psychData'] = False
-                all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+                row_data.status = 'Not scraped'
+                row_data.strapi = False
+                row_data.reason = 'Documents < 200'
+                row_data.topic_model_analysis = False
+                row_data.market_profile = False
+                row_data.psych_data = False
+
+                all_rows.append(row_data)
                 continue
 
             # 2. If not REDDIT data in result
             reddit_result = result.get('reddit')
             if not reddit_result:
-                row_data['Status'] = 'Not analysed'
-                row_data['Strapi'] = False
-                row_data['Reason'] = 'Not found "reddit object"'
-                row_data['topicModelAnalysis'] = False
-                row_data['marketprofile'] = False
-                row_data['psychData'] = False
-                all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+                row_data.status = 'Not analysed'
+                row_data.strapi = False
+                row_data.reason = 'Not found "reddit object"'
+                row_data.topic_model_analysis = False
+                row_data.market_profile = False
+                row_data.psych_data = False
+
+                all_rows.append(row_data)
                 continue
 
             # 3. If not "topicModelAnalysis" or "marketprofile" or "psychData"
@@ -151,13 +165,13 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
             if not topic_model_analysis or not market_profile or not psych_data:
                 reasons = []
                 statuses = []
-                row_data['Strapi'] = False
+                row_data.strapi = False
 
                 # If not "topicModelAnalysis"
                 if not topic_model_analysis:
                     reasons.append('topicModelAnalysis')
                     statuses.append('Not analysed')
-                    row_data['topicModelAnalysis'] = False
+                    row_data.topic_model_analysis = False
 
                 # If not "psychData" or "marketprofile"
                 if not psych_data or not market_profile:
@@ -165,45 +179,55 @@ def scrape_mongodb(communities: list) -> Tuple[dict, list]:
 
                     if not psych_data:
                         reasons.append('psychData')
-                        row_data['psychData'] = False
+                        row_data.psych_data = False
                     if not market_profile:
                         reasons.append('marketprofile')
-                        row_data['marketprofile'] = False
+                        row_data.market_profile = False
 
-                row_data['Reason'] = f'Not found: {",".join(reasons)}'
-                row_data['Status'] = ','.join(statuses)
-                all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+                row_data.reason = f'Not found: {",".join(reasons)}'
+                row_data.status = ','.join(statuses)
+
+                all_rows.append(row_data)
                 continue
 
             # 4. If all good, add community name to "scraped_communities" list
-            all_data = add_sheet_row(row_data=row_data, all_data=all_data)
+            all_rows.append(row_data)
             scraped_communities.append(community)
 
         # If NO result for specific community name in the MongoDB
         else:
-            all_data['Status'].append('Not scraped')
-            all_data['Reason'].append('Not found in "campaign_results"')
-            all_data['Interest Group'].append('')
-            all_data['Community'].append(community)
-            all_data['Date'].append('')
-            all_data['Documents'].append(0)
-            all_data['Strapi'].append(False)
-            all_data['topicModelAnalysis'].append(False)
-            all_data['marketprofile'].append(False)
-            all_data['psychData'].append(False)
+            row_data = CommunityContentRow(
+                interest_group='',
+                community=community,
+                reason='Not found in "campaign_results"',
+                status='Not scraped',
+                documents=0,
+                strapi=False,
+                date='',
+                topic_model_analysis=False,
+                market_profile=False,
+                psych_data=False
+            )
+            all_rows.append(row_data)
 
-    return all_data, scraped_communities
+    return all_rows, scraped_communities
 
 
-def write_data(spreadsheet, data: dict):
-    data_frame = pandas.DataFrame(data)
+def write_data(spreadsheet, all_data: List[Union[CommunityTitleRow, CommunityContentRow]]):
     time_now = datetime.now(tz=ZoneInfo('Europe/Bratislava')).strftime("%Y-%m-%d %H:%M:%S")
     sheet = spreadsheet[0]
     sheet.clear()
 
     # Order values and normalize NaN values
-    data_frame = data_frame.sort_values(by=['Interest Group', 'Community'], ascending=[False, True]).fillna('')
-    sheet.set_dataframe(data_frame, start='A1')
+    # data_frame = data_frame.sort_values(by=['Interest Group', 'Community'], ascending=[False, True]).fillna('')
+    cells_to_insert = []
+    for row_index, item in enumerate(all_data, 1):
+        [getattr(item, field.name) for field in dataclasses.fields(item)]
+        for col_index, field in enumerate(dataclasses.fields(item), 1):
+            cells_to_insert.append(Cell(pos=f'{chr(col_index+64)}{row_index}', val=getattr(item, field.name)))
+
+    sheet.update_cells(cells_to_insert)
+
     sheet.update_value('K1', "Scraped at:")
     sheet.update_value('L1', time_now)
 
@@ -233,13 +257,13 @@ def main():
     communities = get_communities(spreadsheet)
 
     # 3. Scrape MongoDB according to the list of communities, returns only list of successfully scraped communities
-    data, scraped_communities = scrape_mongodb(communities=communities)
+    all_communities, scraped_communities = scrape_mongodb(communities=communities)
 
     # 4. Synchronize Strapi communities according to scraped data
-    sync_strapi(communities=communities, scraped_communities=scraped_communities)
+    # sync_strapi(communities=communities, scraped_communities=scraped_communities)
 
     # 5. Write data into specific Google sheet
-    write_data(spreadsheet=spreadsheet, data=data)
+    write_data(spreadsheet=spreadsheet, all_data=all_communities)
 
 
 if __name__ == '__main__':
