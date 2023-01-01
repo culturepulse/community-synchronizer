@@ -1,7 +1,8 @@
 from typing import List
 
+from strapi_api_client.api_client import ApiClient
+
 from conf import settings
-from services.strapi.api_client import StrapiApiClient
 
 
 class StrapiSynchronizer:
@@ -16,16 +17,13 @@ class StrapiSynchronizer:
         blacklist_premium_communities = [
             'cars'
         ]
-        strapi_api_client = StrapiApiClient(
-            api_url=settings.STRAPI_URL,
-            token=f"Bearer {settings.STRAPI_API_KEY}"
-        )
+        strapi_api_client = ApiClient(api_url=settings.STRAPI_URL, api_key=settings.STRAPI_API_KEY)
 
         for index, community in enumerate(self._communities, 1):
             print(f'{index}/{len(self._communities)} - Syncing {community}.')
 
             # Community not in Strapi
-            community_response = strapi_api_client.get_community(name=community)
+            community_response = strapi_api_client.community.get_community(name=community)
             data = community_response.get('data')
 
             if not data or len(data) <= 0:
@@ -37,10 +35,10 @@ class StrapiSynchronizer:
                     else:
                         is_premium = True
 
-                    strapi_api_client.create_community(data={'name': community, 'isPremium': is_premium})
+                    strapi_api_client.community.create_community(data={'name': community, 'isPremium': is_premium})
 
             # Community in Strapi
             else:
                 # But if community is not scraped, delete from Strapi
                 if community not in scraped_communities:
-                    strapi_api_client.delete_community(community_id=data[0]['id'])
+                    strapi_api_client.community.delete_community(community_id=data[0]['id'])

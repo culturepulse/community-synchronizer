@@ -53,10 +53,7 @@ class MongoDbScraper:
         # Get needed collections
         campaign_results_collection = mongodb_service.get_collection(database=campaign_data_db, name='campaign_results')
         scraped_communities = []
-        all_rows = []
-
-        # Scrape data to "data" variable
-        all_rows.append(self.CommunityTitleRow(
+        all_rows = [self.CommunityTitleRow(
             interest_group='Interest Group',
             community='Community',
             reason='Reason',
@@ -67,7 +64,9 @@ class MongoDbScraper:
             topic_model_analysis='topicModelAnalysis',
             market_profile='marketprofile',
             psych_data='psychData'
-        ))
+        )]
+
+        # Scrape data to "data" variable
 
         for index, community in enumerate(self._communities, 1):
             print(f'{index}/{len(self._communities)} - Scraping {community}.')
