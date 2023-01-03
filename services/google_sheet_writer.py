@@ -17,7 +17,7 @@ class GoogleSheetWriter:
         google_sheet_service = GoogleSheetClient.create_from_scope(scope=settings.GOOGLE_SCOPE)
         self._spreadsheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
 
-    def get_communities(self) -> list:
+    def get_communities(self) -> List[str]:
         sheet = self._spreadsheet.worksheet_by_title('Communities, Groups, Subgroups (Coda)')
         communities = list(dict.fromkeys(sheet.get_col(col=1, include_tailing_empty=False)[1:]))
 

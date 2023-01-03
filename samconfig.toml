@@ -2,7 +2,7 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "strapi-synchronizer"
+stack_name = "community-synchronizer"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-654kvsuiw6rp"
 s3_prefix = "community-synchronizer"
 region = "us-east-1"

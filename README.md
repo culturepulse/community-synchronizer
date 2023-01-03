@@ -1,6 +1,6 @@
-# Strapi synchronizer 📝
+# Community synchronizer 📝
 
-Script for scraping communities and their data from Mongo database to write results to Google sheet and synchronise them with the Strapi CMS.
+Script for scraping communities and their data from Mongo database to write their results into the Google sheet and to synchronise them with the Strapi CMS.
 
 ## Dependencies
 
