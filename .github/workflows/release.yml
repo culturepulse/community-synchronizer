@@ -1,8 +1,7 @@
-name: Python application
+name: Python AWS lambda application
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [created]
 jobs:
   deploy-lambda:
     runs-on: ubuntu-latest

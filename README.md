@@ -1,16 +1,16 @@
 # Strapi synchronizer 📝
 
-Script for scraping specific content from Mongo database to write results to Google sheet and synchronise them to the Strapi CMS.
+Script for scraping communities and their data from Mongo database to write results to Google sheet and synchronise them with the Strapi CMS.
 
 ## Dependencies
 
-[pymongo](https://pymongo.readthedocs.io/en/stable/) for communication with Mongo database.
+[pymongo](https://pymongo.readthedocs.io/en/stable/) for a communication with the Mongo database.
 
-[pygsheets](https://pygsheets.readthedocs.io/en/stable/) for communication with Google Worksheet API.
+[pygsheets](https://pygsheets.readthedocs.io/en/stable/) for a communication with the Google Worksheet API.
 
-[pydantic](https://pydantic-docs.helpmanual.io/) for settings variables.
+[pydantic](https://pydantic-docs.helpmanual.io/) for the settings variables.
 
-[python-dotenv](https://saurabh-kumar.com/python-dotenv/) for sensitive data stored in environment variables.
+[python-dotenv](https://saurabh-kumar.com/python-dotenv/) for sensitive data stored in the environment variables.
 
 ## Basic setup
 - To install dependencies, it's recommended to create `venv` (virtual environment), there install 
@@ -23,7 +23,7 @@ Script for scraping specific content from Mongo database to write results to Goo
 - Set up settings variables in the `conf.py` file.
 
 
-- For successful connection into google sheets, you need to provide OAuth credentials as `credentials.json` file in the project root directory. Go to\
+- For successful connection into the Google sheets, you need to provide an OAuth credentials as a `credentials.json` file in the project root directory. Go to\
 [Google Console - Credentials](https://console.cloud.google.com/projectselector2/apis/credentials?supportedpurview=project), 
 select your project, create Service Account and Key and download the JSON file. More Information in pygsheets
 [docs](https://pygsheets.readthedocs.io/en/stable/authorization.html#service-account).
@@ -33,6 +33,11 @@ select your project, create Service Account and Key and download the JSON file. 
 
 ## Deployment
 Deployment is managed by [AWS Serverless Application Model (SAM)](https://aws.amazon.com/serverless/sam/).
+
+Now, deployment is fully automatic due to the GitHub CI/CD service. So all you need to do is to test the project and push
+feature/fix/change branch to the Git repository. Create a merge request and after a code-review process, this feature will be merged and deployed automatically.
+
+If you still, for some reason need to deploy this project to the AWS Lambda manually, or want to know, how it works, section below is written for you. 
 
 ### AWS cli / SAM cli
 To manage the deployment process, aws cli and sam cli is required. For this tool iam use is needed with setup
@@ -77,7 +82,6 @@ To run and test the project locally before the deployment, run command: `sam loc
 To deploy the project, run command: `sam deploy`.
 
 ## Contribution TODO
-- Get rid of a huge `pandas` dependency.
 - Add AWS Secrets Manager support (for now all secrets inside GitHub Secrets - dirty solution).
 - Change to private GitHub repository (for now due to free GitHub actions policy).
 

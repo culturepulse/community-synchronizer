@@ -30,3 +30,9 @@
 
 - **Removed**: Pandas dependency
 - **Added**: Sentry integration
+
+## 0.2.1 : 03.01.2023
+
+- **Changed**: Deployment is made after release, not a main branch push operation
+- **Changed**: Get sheet operation is made by name, not by an index
+- **Changed**: Some minor README.md notes has been rewritten

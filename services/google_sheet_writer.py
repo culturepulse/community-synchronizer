@@ -18,14 +18,14 @@ class GoogleSheetWriter:
         self._spreadsheet = google_sheet_service.get_sheet(settings.GOOGLE_SPREADSHEET_ID)
 
     def get_communities(self) -> list:
-        sheet = self._spreadsheet[1]
+        sheet = self._spreadsheet.worksheet_by_title('Communities, Groups, Subgroups (Coda)')
         communities = list(dict.fromkeys(sheet.get_col(col=1, include_tailing_empty=False)[1:]))
 
         return communities
 
     def write_data(self, all_data: List[Union[MongoDbScraper.CommunityTitleRow, MongoDbScraper.CommunityContentRow]]):
         time_now = datetime.now(tz=ZoneInfo('Europe/Bratislava')).strftime("%Y-%m-%d %H:%M:%S")
-        sheet = self._spreadsheet[0]
+        sheet = self._spreadsheet.worksheet_by_title('Communities scraped data')
         sheet.clear()
 
         data_to_insert = []
@@ -36,8 +36,7 @@ class GoogleSheetWriter:
         end_row = len(all_data)+1
 
         sheet.update_values(crange=f'A1:{end_column}{end_row}', values=data_to_insert)
-        sheet.sort_range('A2', f'{end_column}{end_row}', basecolumnindex=0, sortorder='DESCENDING')
-        sheet.sort_range('A2', f'{end_column}{end_row}', basecolumnindex=1, sortorder='ASCENDING')
+        sheet.sort_range('A2', f'{end_column}{end_row}', basecolumnindex=0, sortorder='ASCENDING')
 
         sheet.update_value('K1', "Scraped at:")
         sheet.update_value('L1', time_now)
