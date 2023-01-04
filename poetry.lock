@@ -355,7 +355,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "strapi-api-client"
-version = "0.1.0"
+version = "0.3.0"
 description = "Strapi API Client is used for maintaining a communication with the Strapi CMS by HTTP transfer protocol."
 category = "main"
 optional = false
@@ -393,7 +393,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "926a8bfc4b15706706a913c045d4a531f30bf07b3e9ba6e116a854412bbf6d10"
+content-hash = "d9b82adae31183850f82dfb810fc53dbbf7c1e294f4d85f818729fb3f61deff8"
 
 [metadata.files]
 cachetools = [
@@ -619,8 +619,8 @@ six = [
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
 ]
 strapi-api-client = [
-    {file = "strapi-api-client-0.1.0.tar.gz", hash = "sha256:c60b49dc3bc69b121f42d67dfd5ae45063ca203917ce963dd13aabc122dc974c"},
-    {file = "strapi_api_client-0.1.0-py3-none-any.whl", hash = "sha256:d5cbd75e75441cb02a3aaf17cf6f7dfe7366e2c2c6097b8238d27e0c36c9450e"},
+    {file = "strapi-api-client-0.3.0.tar.gz", hash = "sha256:61cd784b47ac71a0608dde5d00781d5c3f0a94a27666904bce79d4b678c5d7ab"},
+    {file = "strapi_api_client-0.3.0-py3-none-any.whl", hash = "sha256:d6718f0281cd68e87b0ed5e20750e8090dc90e35c219ce859809260cc6b93656"},
 ]
 typing-extensions = [
     {file = "typing_extensions-4.4.0-py3-none-any.whl", hash = "sha256:16fa4864408f655d35ec496218b85f79b3437c829e93320c7c9215ccfd92489e"},

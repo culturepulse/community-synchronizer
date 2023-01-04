@@ -36,3 +36,7 @@
 - **Changed**: Deployment is made after release, not a main branch push operation
 - **Changed**: Get sheet operation is made by name, not by an index
 - **Changed**: Some minor README.md notes has been rewritten
+
+## 0.2.2 : 04.01.2023
+
+- **Changed**: Add the newest strapi-api-client dependency support (0.3.0)
