@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "community_synchronizer"
-version = "0.2.2"
+version = "0.2.3"
 description = ""
 authors = ["Adam Žúrek <adam@culturepulse.ai>"]
 readme = "README.md"

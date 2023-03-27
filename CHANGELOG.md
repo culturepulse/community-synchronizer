@@ -40,3 +40,7 @@
 ## 0.2.2 : 04.01.2023
 
 - **Changed**: Add the newest strapi-api-client dependency support (0.3.0)
+
+## 0.2.3 : 27.03.2023
+
+- **Fix**: Raised timeout lambda connection from 120s to 600s
