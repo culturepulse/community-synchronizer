@@ -106,7 +106,7 @@ class MongoDbScraper:
                     continue
 
                 # 2. If not REDDIT data in result
-                reddit_result = result.get('reddit')
+                reddit_result = result.get('data')
                 if not reddit_result:
                     row_data.status = 'Not analysed'
                     row_data.strapi = False
