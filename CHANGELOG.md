@@ -44,3 +44,8 @@
 ## 0.2.3 : 27.03.2023
 
 - **Fix**: Raised timeout lambda connection from 120s to 600s
+
+
+## 0.2.4 : 18.07.2023
+
+- **Fix**: Renamed data object to "data".
